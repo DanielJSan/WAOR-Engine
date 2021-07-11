@@ -53,19 +53,20 @@ namespace lve {
 		const std::string& vertFilepath,
 		const std::string& fragFilepath,
 		const PipelineConfigInfo& configInfo) {
-	
-
-		assert(configInfo.pipelineLayout != VK_NULL_HANDLE && "Cannot create graphics pipeline: No pipelineLayout provided in configInfo");
-		assert(configInfo.renderPass != VK_NULL_HANDLE && "Cannot create graphics pipeline: No renderPass provided in configInfo");
+		assert(
+			configInfo.pipelineLayout != VK_NULL_HANDLE &&
+			"Cannot create graphics pipeline: no pipelineLayout provided in configInfo");
+		assert(
+			configInfo.renderPass != VK_NULL_HANDLE &&
+			"Cannot create graphics pipeline: no renderPass provided in configInfo");
 
 		auto vertCode = readFile(vertFilepath);
 		auto fragCode = readFile(fragFilepath);
 
 		createShaderModule(vertCode, &vertShaderModule);
 		createShaderModule(fragCode, &fragShaderModule);
-	
-		VkPipelineShaderStageCreateInfo shaderStages[2];
 
+		VkPipelineShaderStageCreateInfo shaderStages[2];
 		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
 		shaderStages[0].module = vertShaderModule;
@@ -73,7 +74,6 @@ namespace lve {
 		shaderStages[0].flags = 0;
 		shaderStages[0].pNext = nullptr;
 		shaderStages[0].pSpecializationInfo = nullptr;
-
 		shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 		shaderStages[1].module = fragShaderModule;
@@ -83,11 +83,21 @@ namespace lve {
 		shaderStages[1].pSpecializationInfo = nullptr;
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.vertexAttributeDescriptionCount = 0;
 		vertexInputInfo.vertexBindingDescriptionCount = 0;
 		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 		vertexInputInfo.pVertexBindingDescriptions = nullptr;
+
+
+		VkPipelineViewportStateCreateInfo viewportInfo{};
+		viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportInfo.viewportCount = 1;
+		viewportInfo.pViewports = &configInfo.viewport;
+		viewportInfo.scissorCount = 1;
+		viewportInfo.pScissors = &configInfo.scissor;
+		viewportInfo.flags = 0;
+		viewportInfo.pNext = nullptr;
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -95,13 +105,12 @@ namespace lve {
 		pipelineInfo.pStages = shaderStages;
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
+		pipelineInfo.pViewportState = &configInfo.viewportInfo;
 		pipelineInfo.pRasterizationState = &configInfo.rasterizationInfo;
 		pipelineInfo.pMultisampleState = &configInfo.multisampleInfo;
-
 		pipelineInfo.pColorBlendState = &configInfo.colorBlendInfo;
 		pipelineInfo.pDepthStencilState = &configInfo.depthStencilInfo;
 		pipelineInfo.pDynamicState = nullptr;
-		
 
 		pipelineInfo.layout = configInfo.pipelineLayout;
 		pipelineInfo.renderPass = configInfo.renderPass;
@@ -110,11 +119,15 @@ namespace lve {
 		pipelineInfo.basePipelineIndex = -1;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-		if (vkCreateGraphicsPipelines(lveDevice.device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create a graphics pipeline");
+		if (vkCreateGraphicsPipelines(
+			lveDevice.device(),
+			VK_NULL_HANDLE,
+			1,
+			&pipelineInfo,
+			nullptr,
+			&graphicsPipeline) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create graphics pipeline");
 		}
-		
-
 	}
 
 	void LvePipeline::createShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule) {
@@ -128,37 +141,34 @@ namespace lve {
 		}
 	}
 
-	PipelineConfigInfo LvePipeline::defaultPipelineConfigInfo(uint32_t width, uint32_t height) {
-		PipelineConfigInfo configInfo{};
-
+	void LvePipeline::defaultPipelineConfigInfo(
+		PipelineConfigInfo& configInfo, uint32_t width, uint32_t height) {
 		configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; //Esto especifica que cada grupo de 3 vertices crea un triangulo
-		//Con un triangle strip podemos aprovechar vertices ya existentes para utilizarlos como parte de mas triangulos, aprovechando asi mejor la memoria
-		//El strip se puede romper introduciendo un valor de indice especial en un buffer (0xFFFF o 0xFFFFFFFF)
+		configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-		configInfo.viewport.x = 0.0f; //Nos permite transformar el output de imagen de forma proporcional al grid
+		configInfo.viewport.x = 0.0f;
 		configInfo.viewport.y = 0.0f;
 		configInfo.viewport.width = static_cast<float>(width);
 		configInfo.viewport.height = static_cast<float>(height);
 		configInfo.viewport.minDepth = 0.0f;
 		configInfo.viewport.maxDepth = 1.0f;
 
-		configInfo.scissor.offset = { 0, 0 }; //Corta elementos fuera del rango determinado
+		configInfo.scissor.offset = { 0, 0 };
 		configInfo.scissor.extent = { width, height };
 
-		configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		configInfo.viewportInfo.viewportCount = 1;
-		configInfo.viewportInfo.pViewports = &configInfo.viewport;
-		configInfo.viewportInfo.scissorCount = 1;
-		configInfo.viewportInfo.pScissors = &configInfo.scissor;
+		//configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		//configInfo.viewportInfo.viewportCount = 1;
+		//configInfo.viewportInfo.pViewports = &configInfo.viewport;
+		//configInfo.viewportInfo.scissorCount = 1;
+		//configInfo.viewportInfo.pScissors = &configInfo.scissor;
 
 		configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		configInfo.rasterizationInfo.depthClampEnable = VK_FALSE; //Mapea entre 0 y 1 todos los valores, menos de 0 es detras de la camara y mas de 1 es mas lejos de lo que puede ver
+		configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;
 		configInfo.rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
 		configInfo.rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		configInfo.rasterizationInfo.lineWidth = 1.0f;
-		configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_NONE; //El culling nos permite saber que cara del triangulo estamos viendo
+		configInfo.rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
 		configInfo.rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		configInfo.rasterizationInfo.depthBiasEnable = VK_FALSE;
 		configInfo.rasterizationInfo.depthBiasConstantFactor = 0.0f;  // Optional
@@ -201,13 +211,9 @@ namespace lve {
 		configInfo.depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
 		configInfo.depthStencilInfo.minDepthBounds = 0.0f;  // Optional
 		configInfo.depthStencilInfo.maxDepthBounds = 1.0f;  // Optional
-		configInfo.depthStencilInfo.maxDepthBounds = 1.0f;  // Optional
 		configInfo.depthStencilInfo.stencilTestEnable = VK_FALSE;
 		configInfo.depthStencilInfo.front = {};  // Optional
 		configInfo.depthStencilInfo.back = {};   // Optional
-
-		return configInfo;
-		return configInfo;
 	}
 
 }
