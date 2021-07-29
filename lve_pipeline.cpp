@@ -53,6 +53,7 @@ namespace lve {
 		const std::string& vertFilepath,
 		const std::string& fragFilepath,
 		const PipelineConfigInfo& configInfo) {
+
 		assert(
 			configInfo.pipelineLayout != VK_NULL_HANDLE &&
 			"Cannot create graphics pipeline: no pipelineLayout provided in configInfo");
@@ -141,8 +142,7 @@ namespace lve {
 		}
 	}
 
-	void LvePipeline::defaultPipelineConfigInfo(
-		PipelineConfigInfo& configInfo, uint32_t width, uint32_t height) {
+	void LvePipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo, uint32_t width, uint32_t height) {
 		configInfo.inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
@@ -157,11 +157,11 @@ namespace lve {
 		configInfo.scissor.offset = { 0, 0 };
 		configInfo.scissor.extent = { width, height };
 
-		//configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		//configInfo.viewportInfo.viewportCount = 1;
-		//configInfo.viewportInfo.pViewports = &configInfo.viewport;
-		//configInfo.viewportInfo.scissorCount = 1;
-		//configInfo.viewportInfo.pScissors = &configInfo.scissor;
+		configInfo.viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		configInfo.viewportInfo.viewportCount = 1;
+		configInfo.viewportInfo.pViewports = &configInfo.viewport;
+		configInfo.viewportInfo.scissorCount = 1;
+		configInfo.viewportInfo.pScissors = &configInfo.scissor;
 
 		configInfo.rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		configInfo.rasterizationInfo.depthClampEnable = VK_FALSE;

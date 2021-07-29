@@ -16,11 +16,9 @@ namespace lve {
 	}
 
 	void FirstApp::run() {
-
 		while (!lveWindow.shouldClose()) {
 			glfwPollEvents();
 		}
-
 	}
 
 	void FirstApp::createPipelineLayout() {
@@ -34,7 +32,7 @@ namespace lve {
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
 		if (vkCreatePipelineLayout(lveDevice.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create pipeline layout FIRST_APP.cpp LINE 37");
+			throw std::runtime_error("Failed to create pipeline layout");
 		}
 	}
 
